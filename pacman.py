@@ -8,7 +8,24 @@ import random
 def init_window():
     pygame.init()
     pygame.display.set_mode((512, 512))
-    pygame.display.set_caption('Packman')
+    pygame.display.set_caption('Pacman')
+
+
+
+class Map:
+    def __init__(self,x,y):
+        self.map=[[list()]*x for i in range(y)]
+    def get(self,x,y):
+        return self.map[x][y]
+    def moveTo(self, obj, new_x, new_y):
+                point = self.map[obj.x][obj.y]
+                if obj in point:
+                        point.remove(obj)
+                        self.map[new_x][new_y].add(obj)
+                        obj.set_ccord(obj.x,obj.y)
+                        return True
+                return False
+
 
 
 def draw_background(scr, img=None):
@@ -18,6 +35,8 @@ def draw_background(scr, img=None):
         bg = pygame.Surface(scr.get_size())
         bg.fill((0, 0, 0))
         scr.blit(bg, (0, 0))
+
+
 
 
 class GameObject(pygame.sprite.Sprite):
@@ -48,33 +67,81 @@ class Ghost(GameObject):
     def __init__(self, x, y, tile_size, map_size):
         GameObject.__init__(self, './resources/ghost.png', x, y, tile_size, map_size)
         self.direction = 0
-        self.velocity = 4.0 / 10.0
+        self.velocity = 1
+        map.map[x][y]='g'
 
     def game_tick(self):
-        super(Ghost, self).game_tick()
-        if self.tick % 20 == 0 or self.direction == 0:
+        if  self.direction == 0:
             self.direction = random.randint(1, 4)
-
+        t=0
+        if self.x==pacman.x and self.y>pacman.y:
+            for i in range(pacman.y,self.y):
+                if map.map[self.x][i]=='w' or map.map[self.x][i]=='rw':
+                    t=1
+            if t==0:
+                self.direction=4
+        elif self.x==pacman.x and self.y<pacman.y:
+            for i in range(self.y,pacman.y):
+                if map.map[self.x][i]=='w' or map.map[self.x][i]=='rw':
+                    t=1
+            if t==0:
+                self.direction=2
+        elif self.x>pacman.x and self.y==pacman.y:
+            for i in range(pacman.x,self.x):
+                if map.map[i][self.y]=='w' or map.map[i][self.y]=='rw':
+                    t=1
+            if t==0:
+                self.direction=3
+        elif self.x<pacman.x and self.y==pacman.y:
+            for i in range(self.x,pacman.x):
+                if map.map[i][self.y]=='w' or map.map[i][self.y]=='rw':
+                    t=1
+            if t==0:
+                self.direction=1
         if self.direction == 1:
             self.x += self.velocity
-            if self.x >= self.map_size-1:
+            if self.x > self.map_size-1:
                 self.x = self.map_size-1
                 self.direction = random.randint(1, 4)
+            elif map.map[self.x][self.y]=='w' or map.map[self.x][self.y]=='rw':
+                self.x-=self.velocity
+                self.direction = random.randint(1, 4)
+            else:
+                map.map[self.x][self.y]='g'
+                map.map[self.x-self.velocity][self.y]=''
         elif self.direction == 2:
             self.y += self.velocity
-            if self.y >= self.map_size-1:
+            if self.y > self.map_size-1:
                 self.y = self.map_size-1
                 self.direction = random.randint(1, 4)
+            elif map.map[self.x][self.y]=='w' or map.map[self.x][self.y]=='rw' :
+                self.y-=self.velocity
+                self.direction = random.randint(1, 4)
+            else:
+                map.map[self.x][self.y]='g'
+                map.map[self.x][self.y-self.velocity]=''
         elif self.direction == 3:
             self.x -= self.velocity
-            if self.x <= 0:
+            if self.x < 0:
                 self.x = 0
                 self.direction = random.randint(1, 4)
+            elif map.map[self.x][self.y]=='w' or map.map[self.x][self.y]=='rw':
+                self.x+=self.velocity
+                self.direction = random.randint(1, 4)
+            else:
+                map.map[self.x][self.y]='g'
+                map.map[self.x+self.velocity][self.y]=''
         elif self.direction == 4:
             self.y -= self.velocity
-            if self.y <= 0:
+            if self.y < 0 :
                 self.y = 0
                 self.direction = random.randint(1, 4)
+            elif map.map[self.x][self.y]=='w' or map.map[self.x][self.y]=='rw':
+                self.y+=self.velocity
+                self.direction = random.randint(1, 4)
+            else:
+                map.map[self.x][self.y]='g'
+                map.map[self.x][self.y+self.velocity]=''
         self.set_coord(self.x, self.y)
 
 
@@ -82,26 +149,47 @@ class Pacman(GameObject):
     def __init__(self, x, y, tile_size, map_size):
         GameObject.__init__(self, './resources/pacman.png', x, y, tile_size, map_size)
         self.direction = 0
-        self.velocity = 4.0 / 10.0
+        self.velocity = 1
+        map.map[self.x][self.y]='p'
 
     def game_tick(self):
         super(Pacman, self).game_tick()
         if self.direction == 1:
             self.x += self.velocity
-            if self.x >= self.map_size-1:
+            if self.x > self.map_size-1:
                 self.x = self.map_size-1
+            elif map.map[self.x][self.y]=='w':
+                self.x-=self.velocity
+            else:
+                map.map[self.x][self.y]='p'
+                map.map[self.x-self.velocity][self.y]=''
         elif self.direction == 2:
             self.y += self.velocity
-            if self.y >= self.map_size-1:
+            if self.y > self.map_size-1:
                 self.y = self.map_size-1
+            elif map.map[self.x][self.y]=='w':
+                self.y-=self.velocity
+            else:
+                map.map[self.x][self.y]='p'
+                map.map[self.x][self.y-self.velocity]=''
         elif self.direction == 3:
             self.x -= self.velocity
-            if self.x <= 0:
+            if self.x < 0 :
                 self.x = 0
+            elif map.map[self.x][self.y]=='w':
+                self.x+=self.velocity
+            else:
+                map.map[self.x][self.y]='p'
+                map.map[self.x+self.velocity][self.y]=''
         elif self.direction == 4:
             self.y -= self.velocity
-            if self.y <= 0:
+            if self.y < 0:
                 self.y = 0
+            elif map.map[self.x][self.y]=='w':
+                self.y+=self.velocity
+            else:
+                map.map[self.x][self.y]='p'
+                map.map[self.x][self.y+self.velocity]=''
 
         self.set_coord(self.x, self.y)
 
@@ -123,11 +211,31 @@ def process_events(events, packman):
                 packman.direction = 0
 
 
+class Wall(GameObject):
+    def __init__(self, x, y,r, tile_size, map_size):
+        GameObject.__init__(self, './resources/wall.png', x, y, tile_size, map_size)
+        if r=='n':
+           map.map[x][y]='w'
+        else:
+            map.map[x][y]='rw'
+            self.image=pygame.transform.rotate(self.image,270)
+
 if __name__ == '__main__':
+    input=open('input.txt','r')
     init_window()
-    tile_size = 32
-    map_size = 16
-    ghost = Ghost(0, 0, tile_size, map_size)
+    tile_size =32
+    map_size =16
+    walls=[]
+    ghosts=[]
+    map=Map(map_size,map_size)
+    for i in range(map_size+1):
+        for j in range(map_size+1):
+            a=input.read(1)
+            print(a)
+            if a=='n':
+                walls.append(Wall(j, i, 'n', tile_size, map_size))
+    ghosts.append(Ghost(8, 9, tile_size, map_size))
+    ghosts.append(Ghost(1, 0, tile_size, map_size))
     pacman = Pacman(5, 5, tile_size, map_size)
     background = pygame.image.load("./resources/background.png")
     screen = pygame.display.get_surface()
@@ -135,9 +243,18 @@ if __name__ == '__main__':
     while 1:
         process_events(pygame.event.get(), pacman)
         pygame.time.delay(100)
-        ghost.game_tick()
         pacman.game_tick()
+        for g in ghosts:
+            g.game_tick()
         draw_background(screen, background)
+        for w in walls:
+            if w.x==pacman.x and w.y==pacman.y:
+               walls.pop(walls.index(w))
+            w.draw(screen)
         pacman.draw(screen)
-        ghost.draw(screen)
+        for g in ghosts:
+            g.draw(screen)
         pygame.display.update()
+        for g in ghosts:
+            if g.x==pacman.x and g.y==pacman.y:
+                sys.exit(0)
