@@ -11,7 +11,6 @@ def init_window():
     pygame.display.set_caption('Pacman')
 
 
-
 class Map:
     def __init__(self,x,y):
         self.map=[[list()]*x for i in range(y)]
@@ -27,7 +26,6 @@ class Map:
                 return False
 
 
-
 def draw_background(scr, img=None):
     if img:
         scr.blit(img, (0, 0))
@@ -35,8 +33,6 @@ def draw_background(scr, img=None):
         bg = pygame.Surface(scr.get_size())
         bg.fill((0, 0, 0))
         scr.blit(bg, (0, 0))
-
-
 
 
 class GameObject(pygame.sprite.Sprite):
@@ -71,34 +67,35 @@ class Ghost(GameObject):
         map.map[x][y]='g'
 
     def game_tick(self):
+        super(Ghost, self).game_tick()
         if  self.direction == 0:
             self.direction = random.randint(1, 4)
         t=0
-        if self.x==pacman.x and self.y>pacman.y:
+        if self.x==pacman.x and self.y>pacman.y and pacman.bonys!='m':
             for i in range(pacman.y,self.y):
                 if map.map[self.x][i]=='w' or map.map[self.x][i]=='rw':
                     t=1
             if t==0:
                 self.direction=4
-        elif self.x==pacman.x and self.y<pacman.y:
+        elif self.x==pacman.x and self.y<pacman.y and pacman.bonys!='m':
             for i in range(self.y,pacman.y):
                 if map.map[self.x][i]=='w' or map.map[self.x][i]=='rw':
                     t=1
             if t==0:
                 self.direction=2
-        elif self.x>pacman.x and self.y==pacman.y:
+        elif self.x>pacman.x and self.y==pacman.y and pacman.bonys!='m':
             for i in range(pacman.x,self.x):
                 if map.map[i][self.y]=='w' or map.map[i][self.y]=='rw':
                     t=1
             if t==0:
                 self.direction=3
-        elif self.x<pacman.x and self.y==pacman.y:
+        elif self.x<pacman.x and self.y==pacman.y and pacman.bonys!='m':
             for i in range(self.x,pacman.x):
                 if map.map[i][self.y]=='w' or map.map[i][self.y]=='rw':
                     t=1
             if t==0:
                 self.direction=1
-        if self.direction == 1:
+        if self.direction == 1 and self.tick%2==0 :
             self.x += self.velocity
             if self.x > self.map_size-1:
                 self.x = self.map_size-1
@@ -109,7 +106,7 @@ class Ghost(GameObject):
             else:
                 map.map[self.x][self.y]='g'
                 map.map[self.x-self.velocity][self.y]=''
-        elif self.direction == 2:
+        elif self.direction == 2 and self.tick%2==0:
             self.y += self.velocity
             if self.y > self.map_size-1:
                 self.y = self.map_size-1
@@ -120,7 +117,7 @@ class Ghost(GameObject):
             else:
                 map.map[self.x][self.y]='g'
                 map.map[self.x][self.y-self.velocity]=''
-        elif self.direction == 3:
+        elif self.direction == 3 and self.tick%2==0:
             self.x -= self.velocity
             if self.x < 0:
                 self.x = 0
@@ -131,7 +128,7 @@ class Ghost(GameObject):
             else:
                 map.map[self.x][self.y]='g'
                 map.map[self.x+self.velocity][self.y]=''
-        elif self.direction == 4:
+        elif self.direction == 4 and self.tick%2==0:
             self.y -= self.velocity
             if self.y < 0 :
                 self.y = 0
@@ -158,13 +155,14 @@ class Pacman(GameObject):
     def game_tick(self):
         if self.bonys=='':
             self.timer=0
-        if (self.bonys=='s' or self.bonys=='i'or self.bonys=='y') and self.timer<=20:
+        if (self.bonys=='s' or self.bonys=='i'or self.bonys=='y' or self.bonys=='m') and self.timer<=60:
             self.timer+=1
         else:
             self.bonys=''
             self.timer=0
         super(Pacman, self).game_tick()
-        if self.direction == 1:
+
+        if self.direction == 1 and self.tick%2==0 :
             self.x += self.velocity
             if self.x > self.map_size-1:
                 self.x = self.map_size-1
@@ -173,8 +171,8 @@ class Pacman(GameObject):
             else:
                 map.map[self.x][self.y]='p'
                 map.map[self.x-self.velocity][self.y]=''
-        elif self.direction == 2:
-            self.y += self.velocity
+        elif self.direction == 2 and self.tick%2==0:
+            self.y +=self.velocity
             if self.y > self.map_size-1:
                 self.y = self.map_size-1
             elif map.map[self.x][self.y]=='w' and self.bonys!='y':
@@ -182,7 +180,7 @@ class Pacman(GameObject):
             else:
                 map.map[self.x][self.y]='p'
                 map.map[self.x][self.y-self.velocity]=''
-        elif self.direction == 3:
+        elif self.direction == 3 and self.tick%2==0 :
             self.x -= self.velocity
             if self.x < 0 :
                 self.x = 0
@@ -191,7 +189,7 @@ class Pacman(GameObject):
             else:
                 map.map[self.x][self.y]='p'
                 map.map[self.x+self.velocity][self.y]=''
-        elif self.direction == 4:
+        elif self.direction ==  4 and self.tick%2==0 :
             self.y -= self.velocity
             if self.y < 0:
                 self.y = 0
@@ -232,11 +230,13 @@ class Wall(GameObject):
            map.map[x][y]='w'
         else:
             map.map[x][y]='rw'
-            self.image=pygame.transform.rotate(self.image,270)
+            self.image=pygame.image.load('./resources/rwall.png')
+
 
 class Food(GameObject):
     def  __init__(self,x,y,tile_size, map_size):
         GameObject.__init__(self, './resources/b.png', x, y, tile_size, map_size)
+
 
 class Bonys(GameObject):
     def  __init__(self,x,y,b, img,tile_size, map_size):
@@ -271,8 +271,11 @@ if __name__ == '__main__':
             elif a=='i':
                 bonys.append(Bonys(j,i,'i',"./resources/i.png",tile_size,map_size))
             elif a=='y':
-                bonys.append(Bonys(j,i,'y',"./resources/b.png",tile_size,map_size))
-    pacman = Pacman(5, 5, tile_size, map_size)
+                bonys.append(Bonys(j,i,'y',"./resources/y.png",tile_size,map_size))
+            elif a=='m':
+                bonys.append(Bonys(j,i,'m',"./resources/m.png",tile_size,map_size))
+            elif a=='p':
+                pacman = Pacman(j, i, tile_size, map_size)
     background = pygame.image.load("./resources/background.png")
     screen = pygame.display.get_surface()
 
@@ -280,8 +283,6 @@ if __name__ == '__main__':
         process_events(pygame.event.get(), pacman)
         pygame.time.delay(100)
         pacman.game_tick()
-        for g in ghosts:
-            g.game_tick()
         draw_background(screen, background)
         i=0
         while i<len(walls):
@@ -305,15 +306,20 @@ if __name__ == '__main__':
                     pacman.bonys='s'
                 elif bonys[k].b=='i':
                     pacman.bonys='i'
+                elif bonys[k].b=='m':
+                    pacman.bonys='m'
                 else:
                     pacman.bonys='y'
                 pacman.timer=0
                 bonys.pop(k)
             else:
                 k+=1
+        if len(food)==0:
+            sys.exit(0)
         pacman.draw(screen)
         g=0
         while g<len(ghosts):
+            ghosts[g].game_tick()
             ghosts[g].draw(screen)
             if pacman.x==ghosts[g].x and ghosts[g].y==pacman.y and pacman.bonys=='s':
                 ghosts.pop(g)
